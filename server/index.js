@@ -3,6 +3,9 @@ import http from "http";
 import { Server as IOServer } from "socket.io";
 import queue from "./queue.js";
 import dotenv from "dotenv";
+import fs from "fs";
+import { sendMessage } from "./rabbitmq/producer.js";
+
 dotenv.config();
 
 const clients = new Map();
@@ -15,22 +18,29 @@ const io = new IOServer(server, {
   },
 });
 (async () => {
+  //await queue.loadTracks("D:/LICENTA/licenta-server/server/tracks");
+  // queue.play();
   function defineRoutes() {
     app.get("/stream", (req, res) => {
-        console.log(req.query.client_id);
-     // const { id, client } = queue.addClient();
-
+      //const { id, client } = queue.addClient();
+      const file = fs.createReadStream("server/tracks/Adele-LoveInTheDark.mp3");
+      sendMessage("Preparing file to read","info")
+      // file.on("data", (chunk) => {
+      //   res.send(chunk);
+      // });
       res
         .set({
           "Content-Type": "audio/mp3",
           "Transfer-Encoding": "chunked",
         })
         .status(200);
-
-      //client.pipe(res);
+        file.pipe(res)
 
       req.on("close", () => {
-        queue.removeClient(id);
+        //  queue.removeClient(id);
+        console.log("Finished track")
+        sendMessage("Request is closed","error")
+        res.end();
       });
     });
   }
@@ -38,14 +48,14 @@ const io = new IOServer(server, {
     io.on("connection", (socket) => {
       console.log("New listener connected");
       console.log(socket.id);
-      clients.set(socket.id,1)
-      console.log({clients});
+
+      console.log({ clients });
     });
   }
   server.listen(process.env.SERVER_PORT, () => {
     console.log(`Listening on port ${process.env.SERVER_PORT}`);
     prepareSocketForClientConnection();
-    defineRoutes()
+    defineRoutes();
   });
 })();
 export {};
