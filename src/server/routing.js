@@ -1,10 +1,9 @@
 import express from "express";
 import http from "http";
 import { Server as IOServer } from "socket.io";
-import queue from "./queue.js";
 import dotenv from "dotenv";
 import fs from "fs";
-import { sendMessage } from "./rabbitmq/producer.js";
+import { sendMessage } from "#root/src/server/rabbitmq/producer.js";
 
 dotenv.config();
 
@@ -13,7 +12,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new IOServer(server, {
   cors: {
-    origin: `${process.env.CLIENT_DOMAIN}:${process.env.CLIENT_PORT}`,
+    origin:'*',// `${process.env.CLIENT_DOMAIN}:${process.env.CLIENT_PORT}`,
     methods: ["GET", "POST"],
   },
 });
@@ -23,8 +22,8 @@ const io = new IOServer(server, {
   function defineRoutes() {
     app.get("/stream", (req, res) => {
       //const { id, client } = queue.addClient();
-      const file = fs.createReadStream("server/tracks/Adele-LoveInTheDark.mp3");
-      sendMessage("Preparing file to read","info")
+      const file = fs.createReadStream("src/server/tracks/Adele-LoveInTheDark.mp3");
+      //sendMessage("Preparing file to read","info")
       // file.on("data", (chunk) => {
       //   res.send(chunk);
       // });
@@ -39,7 +38,7 @@ const io = new IOServer(server, {
       req.on("close", () => {
         //  queue.removeClient(id);
         console.log("Finished track")
-        sendMessage("Request is closed","error")
+        //sendMessage("Request is closed","error")
         res.end();
       });
     });

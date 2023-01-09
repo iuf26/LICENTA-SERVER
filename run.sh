@@ -2,8 +2,6 @@
 
 envFile=".env";
 
-cd $(dirname $0)
-
 if [ -n "${1:-}" ]; then
     envFile=$1
 fi
@@ -18,5 +16,5 @@ set -o allexport
 source $envFile
 set +o allexport
 
-npm install
-node app.js
+#npm install
+npx nodemon@latest src/app.js

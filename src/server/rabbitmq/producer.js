@@ -4,6 +4,7 @@ const exchangeName = "direct_logs";
 const args = process.argv.slice(2);
 
 export const sendMessage = async (msg,logType) => {
+  console.log("hello");
   const connection = await amqplib.connect("amqp://localhost");
   const channel = await connection.createChannel();
   await channel.assertExchange(exchangeName, "direct", { durable: false });

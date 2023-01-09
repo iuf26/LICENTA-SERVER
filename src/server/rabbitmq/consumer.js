@@ -1,8 +1,7 @@
 import amqplib from "amqplib";
 import fs from "fs";
 import { DateTime } from "luxon";
-import { sendMessage } from "./producer.js";
-
+import { sendMessage } from "#root/src/server/rabbitmq/producer.js";
 
 const args = process.argv.slice(2);// select message  type to listen to
 const infoFile = 'server\\rabbitmq\\info.logs.txt'
