@@ -1,12 +1,11 @@
 {
-  "type": "module",
   "name": "licenta-server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-  "imports": {
-    "#root/*.js": "./*.js"
-  },
+  "main": "dist/app.js",
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@dropb/ffprobe": "^2.0.1",
     "amqplib": "^0.10.3",
@@ -16,6 +15,7 @@
     "ffprobe-static": "^3.1.0",
     "jnaudiostream": "^1.0.2",
     "luxon": "^3.2.0",
+    "mongodb": "^4.13.0",
     "react-feather": "^2.0.10",
     "react-router-dom": "^6.4.4",
     "socket.io": "^4.5.4",
@@ -35,7 +35,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon app.js",
-    "watch": "nodemon"
+    "watch": "nodemon",
+    "build": "babel src -d dist --copy-files"
   },
   "author": "",
   "license": "ISC"

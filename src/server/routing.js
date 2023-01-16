@@ -3,47 +3,47 @@ import http from "http";
 import { Server as IOServer } from "socket.io";
 import dotenv from "dotenv";
 import fs from "fs";
-import { sendMessage } from "#root/src/server/rabbitmq/producer.js";
-
-dotenv.config();
+import { sendMessage } from "server/rabbitmq/producer.js";
+import {
+  establishDbConnection,
+  closeDbConnection,
+} from "server/helpers/mongo-connection.js";
 
 const clients = new Map();
 const app = express();
 const server = http.createServer(app);
 const io = new IOServer(server, {
   cors: {
-    origin:'*',// `${process.env.CLIENT_DOMAIN}:${process.env.CLIENT_PORT}`,
+    origin: "*", // `${process.env.CLIENT_DOMAIN}:${process.env.CLIENT_PORT}`,
     methods: ["GET", "POST"],
   },
 });
+
 (async () => {
-  //await queue.loadTracks("D:/LICENTA/licenta-server/server/tracks");
-  // queue.play();
   function defineRoutes() {
     app.get("/stream", (req, res) => {
-      //const { id, client } = queue.addClient();
-      const file = fs.createReadStream("src/server/tracks/Adele-LoveInTheDark.mp3");
-      //sendMessage("Preparing file to read","info")
-      // file.on("data", (chunk) => {
-      //   res.send(chunk);
-      // });
+      const file = fs.createReadStream(
+        "src/server/tracks/Adele-LoveInTheDark.mp3"
+      );
       res
         .set({
           "Content-Type": "audio/mp3",
           "Transfer-Encoding": "chunked",
         })
         .status(200);
-        file.pipe(res)
+      file.pipe(res);
 
       req.on("close", () => {
-        //  queue.removeClient(id);
-        console.log("Finished track")
-        //sendMessage("Request is closed","error")
+        console.log("Finished track");
         res.end();
       });
     });
+
+    app.get("/user", (req, res) => {});
   }
+
   function prepareSocketForClientConnection() {
+    console.log("here");
     io.on("connection", (socket) => {
       console.log("New listener connected");
       console.log(socket.id);
@@ -51,10 +51,18 @@ const io = new IOServer(server, {
       console.log({ clients });
     });
   }
+
   server.listen(process.env.SERVER_PORT, () => {
+    dotenv.config();
     console.log(`Listening on port ${process.env.SERVER_PORT}`);
     prepareSocketForClientConnection();
+    establishDbConnection();
     defineRoutes();
+  });
+
+  server.on("close", () => {
+    console.log("Server closed");
+    closeDbConnection();
   });
 })();
 export {};

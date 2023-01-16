@@ -1,1 +1,1 @@
-import "#root/src/server/routing.js";
+import "./server/routing.js";
