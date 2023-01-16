@@ -43,11 +43,9 @@ const io = new IOServer(server, {
   }
 
   function prepareSocketForClientConnection() {
-    console.log("here");
     io.on("connection", (socket) => {
       console.log("New listener connected");
       console.log(socket.id);
-
       console.log({ clients });
     });
   }
@@ -55,6 +53,7 @@ const io = new IOServer(server, {
   server.listen(process.env.SERVER_PORT, () => {
     dotenv.config();
     console.log(`Listening on port ${process.env.SERVER_PORT}`);
+    console.log("here2");
     prepareSocketForClientConnection();
     establishDbConnection();
     defineRoutes();

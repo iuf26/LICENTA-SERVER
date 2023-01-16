@@ -17,5 +17,4 @@ source $envFile
 set +o allexport
 
 #npm install
-npx babel src -d dist --copy-files
-npx nodemon@latest app.js
+npm start

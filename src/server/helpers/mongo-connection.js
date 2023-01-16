@@ -13,7 +13,6 @@ export const users = () => {
 }
 
 export async function establishDbConnection() {
-  console.info("Connection established");
   await client.connect();
   console.info("Connection established");
 }
