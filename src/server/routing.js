@@ -40,6 +40,7 @@ const io = new IOServer(server, {
     });
 
     app.get("/user", (req, res) => {});
+    
   }
 
   function prepareSocketForClientConnection() {
