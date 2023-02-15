@@ -17,4 +17,4 @@ source $envFile
 set +o allexport
 
 #npm install
-npm start
+npm run all
