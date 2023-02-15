@@ -11,8 +11,12 @@ export const userSchema = new Schema({
     type: String,
     required: "Enter password",
   },
-  created_date:{
+  permissions: {
+    type: Object,
+    default: ["user"],
+  },
+  created_date: {
     type: Date,
-    default: Date.now()
-},
+    default: Date.now(),
+  },
 });
