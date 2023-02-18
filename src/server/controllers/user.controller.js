@@ -1,8 +1,7 @@
 import bcrypt from "bcrypt";
 import mongoose, { mongo } from "mongoose";
-import { userSchema } from "server/models/User";
-
-const User = mongoose.model("users", userSchema);
+import User from "server/models/User";
+import UserOtpVerification from "server/models/UserOtpVerification";
 
 const comparePasswords = async (plaintextPassword, hash) => {
   const result = await bcrypt.compare(plaintextPassword, hash);
@@ -32,7 +31,7 @@ export const getAll = (req, res) => {
 
 export const register = (req, res) => {
   const { email, password, confirm } = req.body;
-
+  //Validation
   if (!email || !password || !confirm) {
     return res.status(400).send("Fill empty fields");
   }
@@ -43,11 +42,6 @@ export const register = (req, res) => {
     if (user) {
       return res.status(400).send("A user with this email already exists!");
     }
-    //Validation
-    const user = new User({
-      email,
-      password,
-    });
     //Password Hashing
     bcrypt.genSalt(10, (err, salt) =>
       bcrypt.hash(user.password, salt, (err, hash) => {
@@ -78,7 +72,7 @@ export const login = async (req, res) => {
     user.password
   );
   if (passwordComparisonResult) {
-    return res.status(200).send("Successful login!");
+    return res.status(200).json({message: "Successful login!"});
   }
   return res.status(400).send("Wrong credentials!");
 };

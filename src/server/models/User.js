@@ -15,8 +15,16 @@ export const userSchema = new Schema({
     type: Object,
     default: ["user"],
   },
+  verified: {
+    type: Boolean,
+    default: false,
+  },
   created_date: {
     type: Date,
     default: Date.now(),
   },
 });
+
+const User = mongoose.model("users", userSchema);
+
+export default User;
