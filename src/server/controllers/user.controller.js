@@ -1,22 +1,12 @@
 import bcrypt from "bcrypt";
+import { DateTime } from "luxon";
 import mongoose, { mongo } from "mongoose";
+import { sendVerificationEmail } from "server/helpers/mail.helper";
 import User from "server/models/User";
 import UserOtpVerification from "server/models/UserOtpVerification";
 
 const comparePasswords = async (plaintextPassword, hash) => {
-  const result = await bcrypt.compare(plaintextPassword, hash);
-  return result;
-};
-
-export const add = (req, res) => {
-  const user = new User(req.body);
-  user.save((err, answer) => {
-    if (err) {
-      return res.status(500).send(err);
-    } else {
-      return res.status(200).send(answer);
-    }
-  });
+  return bcrypt.compare(plaintextPassword, hash);
 };
 
 export const getAll = (req, res) => {
@@ -42,14 +32,20 @@ export const register = (req, res) => {
     if (user) {
       return res.status(400).send("A user with this email already exists!");
     }
+    const newUser = new User({
+      email,
+      password,
+    });
     //Password Hashing
     bcrypt.genSalt(10, (err, salt) =>
-      bcrypt.hash(user.password, salt, (err, hash) => {
+      bcrypt.hash(newUser.password, salt, (err, hash) => {
         if (err) throw err;
-        user.password = hash;
-        user
+        newUser.password = hash;
+        newUser
           .save()
-          .then(res.status(201).send("Successful registration!"))
+          .then((result) => {
+            sendVerificationEmail(result, res);
+          })
           .catch((err) => res.status(500).send(err));
       })
     );
@@ -72,7 +68,44 @@ export const login = async (req, res) => {
     user.password
   );
   if (passwordComparisonResult) {
-    return res.status(200).json({message: "Successful login!"});
+    return res.status(200).json({ message: "Successful login!" });
   }
   return res.status(400).send("Wrong credentials!");
+};
+
+export const verify = (req, res) => {
+  const { userId, otp } = req.params;
+  UserOtpVerification.findOne({ user_id: userId })
+    .then(async (result) => {
+      if (!result) {
+        res.status(404).json({ message: "Invalid verification link!" });
+        return;
+      }
+
+      const { user_id, expires_at, otp: otpHashed } = result;
+      const otpValidationResult = await comparePasswords(otp, otpHashed);
+
+      if (!otpValidationResult) {
+        res.status(404).json({ message: "Invalid verification link!" });
+        return;
+      }
+
+      const currentTime = DateTime.utc();
+      const expiresAt = DateTime.fromISO(expires_at).toUTC();
+      console.log({otpHashed, user_id});
+      if (currentTime <= expiresAt) {
+        await User.findOneAndUpdate({ email: user_id }, { $set: { verified: true } });
+        await UserOtpVerification.deleteOne({ user_id, otp: otpHashed });
+        res.status(200).json({ message: "Successfully verified email!" });
+        return;
+      }
+  
+      await UserOtpVerification.deleteOne({ user_id, otp: otpHashed });
+      res.status(410).json({ message: "Link for email verification expired!" });
+      return;
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ message: "Email verification failed!" });
+    });
 };

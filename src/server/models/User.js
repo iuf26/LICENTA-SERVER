@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import mongoose from "mongoose";
 
 const Schema = mongoose.Schema;
@@ -20,8 +21,8 @@ export const userSchema = new Schema({
     default: false,
   },
   created_date: {
-    type: Date,
-    default: Date.now(),
+    type: String,
+    default: DateTime.utc().toISO(),
   },
 });
 

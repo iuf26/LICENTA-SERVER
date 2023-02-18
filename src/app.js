@@ -18,7 +18,7 @@ const io = new IOServer(server, {
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use("/", userRoute);
+app.use("/user", userRoute);
 //MongoDB connection
 const database = process.env.MONGO_URL;
 mongoose.set("strictQuery", true);
