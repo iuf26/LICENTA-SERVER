@@ -4,17 +4,21 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import { Server as IOServer } from "socket.io";
-import { userRoute } from "server/routes/user";
+import { userRoute } from "server/routes/user.route";
 
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
 const io = new IOServer(server, {
   cors: {
-    origin: "*", // `${process.env.CLIENT_DOMAIN}:${process.env.CLIENT_PORT}`,
-    methods: ["GET", "POST"],
+    origin: "*",
+    methods: ["GET", "POST", "PUT"],
   },
 });
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use("/user", userRoute);
 //MongoDB connection
 const database = process.env.MONGO_URL;
 mongoose.set("strictQuery", true);
@@ -29,10 +33,7 @@ server.listen(process.env.SERVER_PORT, () => {
     console.log("New listener connected");
     console.log(socket.id);
   });
-  app.use(bodyParser.json());
-  app.use("/", userRoute);
   // prepareSocketForClientConnection();
-  // establishDbConnection();
 });
 
 server.on("close", () => {

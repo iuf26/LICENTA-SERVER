@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import mongoose from "mongoose";
 
 const Schema = mongoose.Schema;
@@ -15,8 +16,16 @@ export const userSchema = new Schema({
     type: Object,
     default: ["user"],
   },
+  verified: {
+    type: Boolean,
+    default: false,
+  },
   created_date: {
-    type: Date,
-    default: Date.now(),
+    type: String,
+    default: DateTime.utc().toISO(),
   },
 });
+
+const User = mongoose.model("users", userSchema);
+
+export default User;
