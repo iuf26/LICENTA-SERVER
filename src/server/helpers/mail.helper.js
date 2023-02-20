@@ -7,15 +7,13 @@ import fs from "fs";
 import { renderFile } from "pug";
 import path from "path";
 
-
-var readHTMLFile = function(path, callback) {
-  fs.readFile(path, {encoding: 'utf-8'}, function (err, html) {
-      if (err) {
-         callback(err);                 
-      }
-      else {
-          callback(null, html);
-      }
+var readHTMLFile = function (path, callback) {
+  fs.readFile(path, { encoding: "utf-8" }, function (err, html) {
+    if (err) {
+      callback(err);
+    } else {
+      callback(null, html);
+    }
   });
 };
 
@@ -33,10 +31,13 @@ export const sendVerificationEmail = ({ _id, email }, res) => {
   });
   const serverRootUrl = `${process.env.SERVER_DOMAIN}:${process.env.SERVER_PORT}`;
   const otp = v4() + _id;
-  const html = renderFile(path.join(__dirname, "../../views/mail.pug"),{confirmationLink:`${serverRootUrl} + "/user/verify/" + ${email} + "/" + ${otp}`});
+  const confirmationLink = `${serverRootUrl}/user/verify/${email}/${otp}`;
+  console.log({confirmationLink});
+  const html = renderFile(path.join(__dirname, "../../views/mail.pug"), {
+    confirmationLink,
+  });
   //`<div>Verify your email address to complete signup and login into your account. Press <a href=${
-   
-  
+
   const mailOptions = {
     from: process.env.MAIL_USERNAME,
     to: email,
