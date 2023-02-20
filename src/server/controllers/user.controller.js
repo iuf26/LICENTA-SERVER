@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import { DateTime } from "luxon";
 import mongoose, { mongo } from "mongoose";
+import { generateJwt } from "server/helpers/jwt.helper";
 import { sendVerificationEmail } from "server/helpers/mail.helper";
 import User from "server/models/User";
 import UserOtpVerification from "server/models/UserOtpVerification";
@@ -63,14 +64,47 @@ export const login = async (req, res) => {
   if (!user) {
     return res.status(400).send("User does not exist!");
   }
+  if (!user.verified) {
+    return res.status(400).send("Account not verified!");
+  }
   const passwordComparisonResult = await comparePasswords(
     password,
     user.password
   );
   if (passwordComparisonResult) {
-    return res.status(200).json({ message: "Successful login!" });
+    const token = generateJwt(email);
+    if (!token)
+      res.status(500).json({ message: "Generate token failed for login!" });
+    user.acces_token = token;
+    await user.save();
+    return res
+      .status(200)
+      .json({ message: "Successful login!", body: { token } });
   }
   return res.status(400).send("Wrong credentials!");
+};
+
+export const logout = (req, res) => {
+  const { username } = req.decodedJwt;
+  User.findOne({ email: username })
+    .then(async (user) => {
+      if (user) {
+        user.acces_token = null;
+        await user.save();
+        return res.status(200).json({
+          message: "User logged out!",
+        });
+      }
+      return res.status(500).json({
+        message: "Could not find this user to log out!",
+      });
+    })
+    .catch((error) => {
+      console.log(error);
+      return res.status(500).json({
+        message: error,
+      });
+    });
 };
 
 export const verify = (req, res) => {
@@ -92,14 +126,17 @@ export const verify = (req, res) => {
 
       const currentTime = DateTime.utc();
       const expiresAt = DateTime.fromISO(expires_at).toUTC();
-      console.log({otpHashed, user_id});
+      console.log({ otpHashed, user_id });
       if (currentTime <= expiresAt) {
-        await User.findOneAndUpdate({ email: user_id }, { $set: { verified: true } });
+        await User.findOneAndUpdate(
+          { email: user_id },
+          { $set: { verified: true } }
+        );
         await UserOtpVerification.deleteOne({ user_id, otp: otpHashed });
         res.status(200).json({ message: "Successfully verified email!" });
         return;
       }
-  
+
       await UserOtpVerification.deleteOne({ user_id, otp: otpHashed });
       res.status(410).json({ message: "Link for email verification expired!" });
       return;
