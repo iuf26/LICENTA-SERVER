@@ -24,6 +24,10 @@ export const userSchema = new Schema({
     type: String,
     default: DateTime.utc().toISO(),
   },
+  acces_token: {
+    type: String,
+    default: null,
+  },
 });
 
 const User = mongoose.model("users", userSchema);

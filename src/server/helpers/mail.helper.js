@@ -3,6 +3,19 @@ import { v4 } from "uuid";
 import bcrypt from "bcrypt";
 import { DateTime } from "luxon";
 import UserOtpVerification from "server/models/UserOtpVerification";
+import fs from "fs";
+import { renderFile } from "pug";
+import path from "path";
+
+var readHTMLFile = function (path, callback) {
+  fs.readFile(path, { encoding: "utf-8" }, function (err, html) {
+    if (err) {
+      callback(err);
+    } else {
+      callback(null, html);
+    }
+  });
+};
 
 export const sendVerificationEmail = ({ _id, email }, res) => {
   const transporter = nodemailer.createTransport({
@@ -18,13 +31,18 @@ export const sendVerificationEmail = ({ _id, email }, res) => {
   });
   const serverRootUrl = `${process.env.SERVER_DOMAIN}:${process.env.SERVER_PORT}`;
   const otp = v4() + _id;
+  const confirmationLink = `${serverRootUrl}/user/verify/${email}/${otp}`;
+  console.log({confirmationLink});
+  const html = renderFile(path.join(__dirname, "../../views/mail.pug"), {
+    confirmationLink,
+  });
+  //`<div>Verify your email address to complete signup and login into your account. Press <a href=${
+
   const mailOptions = {
     from: process.env.MAIL_USERNAME,
     to: email,
     subject: "Welcome to our community of music enthusiasts!",
-    html: `<div>Verify your email address to complete signup and login into your account. Press <a href=${
-      serverRootUrl + "/user/verify/" + email + "/" + otp
-    }>link</a>.</div>`,
+    html: html,
   };
 
   //hash otp - one time password
