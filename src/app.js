@@ -15,6 +15,13 @@ const io = new IOServer(server, {
     methods: ["GET", "POST", "PUT"],
   },
 });
+const prepareSocketForClientConnection = () => {
+  io.on("connection", (socket) => {
+    console.log("New listener connected");
+    //console.log(socket.id);
+    //console.log({ clients });
+  });
+}
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -33,7 +40,7 @@ server.listen(process.env.SERVER_PORT, () => {
     console.log("New listener connected");
     console.log(socket.id);
   });
-  // prepareSocketForClientConnection();
+  prepareSocketForClientConnection();
 });
 
 server.on("close", () => {

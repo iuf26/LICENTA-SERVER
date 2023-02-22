@@ -21,17 +21,17 @@ export const getAll = (req, res) => {
 };
 
 export const register = (req, res) => {
-  const { email, password, confirm } = req.body;
+  const { email, password, confirmation } = req.body;
   //Validation
-  if (!email || !password || !confirm) {
+  if (!email || !password || !confirmation) {
     return res.status(400).send("Fill empty fields");
   }
-  if (password !== confirm) {
+  if (password !== confirmation) {
     return res.status(400).send("Password must match");
   }
   User.findOne({ email }).then((user) => {
     if (user) {
-      return res.status(400).send("A user with this email already exists!");
+      return res.status(400).json({message: "A user with this email already exists!"});
     }
     const newUser = new User({
       email,
