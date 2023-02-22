@@ -3,6 +3,12 @@ import { DateTime } from "luxon";
 import mongoose, { mongo } from "mongoose";
 import { generateJwt } from "server/helpers/jwt.helper";
 import { sendVerificationEmail } from "server/helpers/mail.helper";
+import {
+  ERROR,
+  sendResponse,
+  SUCCESS,
+  WARNING,
+} from "server/helpers/response.helper";
 import User from "server/models/User";
 import UserOtpVerification from "server/models/UserOtpVerification";
 
@@ -10,28 +16,27 @@ const comparePasswords = async (plaintextPassword, hash) => {
   return bcrypt.compare(plaintextPassword, hash);
 };
 
-export const getAll = (req, res) => {
-  Student.find({}, (err, answer) => {
-    if (err) {
-      return res.status(500).send(err);
-    } else {
-      return res.status(200).send(answer);
-    }
-  });
-};
-
 export const register = (req, res) => {
-  const { email, password, confirm } = req.body;
-  //Validation
-  if (!email || !password || !confirm) {
-    return res.status(400).send("Fill empty fields");
+  const { email, password, confirmation } = req.body;
+  if (!email || !password || !confirmation) {
+    return sendResponse(res, 400, "Fill empty fields", WARNING);
   }
-  if (password !== confirm) {
-    return res.status(400).send("Password must match");
+  if (password !== confirmation) {
+    return sendResponse(
+      res,
+      400,
+      "Confirmation password doesn't match",
+      WARNING
+    );
   }
   User.findOne({ email }).then((user) => {
     if (user) {
-      return res.status(400).send("A user with this email already exists!");
+      return sendResponse(
+        res,
+        400,
+        "A user with this email already exists!",
+        WARNING
+      );
     }
     const newUser = new User({
       email,
@@ -47,7 +52,10 @@ export const register = (req, res) => {
           .then((result) => {
             sendVerificationEmail(result, res);
           })
-          .catch((err) => res.status(500).send(err));
+          .catch((err) =>
+            //TO DO: send error message to the logging system so that it could be saved somewhere in a aws file
+            sendResponse(res, 500, "Could not save user in database", ERROR)
+          );
       })
     );
   });
@@ -57,15 +65,15 @@ export const login = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).send("Fill empty fields");
+    return sendResponse(res, 400, "Please fill empty fields", WARNING);
   }
 
   const user = await User.findOne({ email });
   if (!user) {
-    return res.status(400).send("User does not exist!");
+    return sendResponse(res, 400, "User does not exist!", WARNING);
   }
   if (!user.verified) {
-    return res.status(400).send("Account not verified!");
+    return sendResponse(res, 400, "Account is not verified!", ERROR);
   }
   const passwordComparisonResult = await comparePasswords(
     password,
@@ -74,14 +82,13 @@ export const login = async (req, res) => {
   if (passwordComparisonResult) {
     const token = generateJwt(email);
     if (!token)
-      res.status(500).json({ message: "Generate token failed for login!" });
+      //TO DO: send message to rabbitmq logging system(audit)  "Generate token failed for login!"
+      return sendResponse(res, 500, "Login failed", ERROR);
     user.acces_token = token;
     await user.save();
-    return res
-      .status(200)
-      .json({ message: "Successful login!", body: { token } });
+    return sendResponse(res, 200, "Successful login!", SUCCESS, { token });
   }
-  return res.status(400).send("Wrong credentials!");
+  return sendResponse(res, 400, "Wrong credentials!", ERROR);
 };
 
 export const logout = (req, res) => {
@@ -91,19 +98,13 @@ export const logout = (req, res) => {
       if (user) {
         user.acces_token = null;
         await user.save();
-        return res.status(200).json({
-          message: "User logged out!",
-        });
+        return sendResponse(res, 200, "User logged out!", SUCCESS);
       }
-      return res.status(500).json({
-        message: "Could not find this user to log out!",
-      });
+      return sendResponse(res, 500, "Could not find user to log out!", ERROR);
     })
     .catch((error) => {
-      console.log(error);
-      return res.status(500).json({
-        message: error,
-      });
+      //TO DO send message to audit system (rabbit mq)
+      return sendResponse(res, 500, error, ERROR);
     });
 };
 
@@ -112,37 +113,31 @@ export const verify = (req, res) => {
   UserOtpVerification.findOne({ user_id: userId })
     .then(async (result) => {
       if (!result) {
-        res.status(404).json({ message: "Invalid verification link!" });
-        return;
+        return sendResponse(res, 404, "Invalid verification link!", ERROR);
       }
 
       const { user_id, expires_at, otp: otpHashed } = result;
       const otpValidationResult = await comparePasswords(otp, otpHashed);
-
       if (!otpValidationResult) {
-        res.status(404).json({ message: "Invalid verification link!" });
-        return;
+        return sendResponse(res, 404, "Invalid verification link!", ERROR);
       }
 
       const currentTime = DateTime.utc();
       const expiresAt = DateTime.fromISO(expires_at).toUTC();
-      console.log({ otpHashed, user_id });
       if (currentTime <= expiresAt) {
         await User.findOneAndUpdate(
           { email: user_id },
           { $set: { verified: true } }
         );
         await UserOtpVerification.deleteOne({ user_id, otp: otpHashed });
-        res.status(200).json({ message: "Successfully verified email!" });
-        return;
+        return sendResponse(res, 200, "Successfully verified email!", SUCCESS);
       }
 
       await UserOtpVerification.deleteOne({ user_id, otp: otpHashed });
-      res.status(410).json({ message: "Link for email verification expired!" });
-      return;
+      return sendResponse(res, 410, "Link for email verification expired!", ERROR);
     })
     .catch((error) => {
-      console.log(error);
-      res.status(500).json({ message: "Email verification failed!" });
+      //TO DO send error to audit service
+      return sendResponse(res, 500,  "Email verification failed!" , ERROR);
     });
 };
