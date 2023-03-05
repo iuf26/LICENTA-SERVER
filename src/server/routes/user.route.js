@@ -14,8 +14,17 @@ router.get("/verified", (req, res) => {
     redirectPage: `${process.env.LOGIN_PAGE_HOST}`,
   });
 });
-router.get("/password-reset/:email/:otp", userController.checkResetPasswordLink)
-router.get("/password-reset",userController.resetPassword)
-router.post("/password-reset/new-credentials", userController.updateCredentials)
-
+router.get(
+  "/password-reset/:email/:otp",
+  userController.checkResetPasswordLink
+);
+router.get(
+  "/password-reset/verify-link/:email/:otp",
+  userController.checkResetPasswordOtp
+);
+router.get("/password-reset", userController.resetPassword);
+router.post(
+  "/password-reset/new-credentials",
+  userController.updateCredentials
+);
 export { router as userRoute };

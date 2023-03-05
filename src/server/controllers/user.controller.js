@@ -134,7 +134,7 @@ export const verify = (req, res) => {
         );
         await UserOtpVerification.deleteOne({ user_id, otp: otpHashed });
         //return sendResponse(res, 200, "Successfully verified email!", SUCCESS);
-        return res.redirect("/verified")
+        return res.redirect("/verified");
       }
 
       await UserOtpVerification.deleteOne({ user_id, otp: otpHashed });
@@ -170,6 +170,26 @@ export const resetPassword = async (req, res) => {
   sendResetPasswordLink({ email }, res);
 };
 
+export const checkResetPasswordOtp = (req, res) => {
+  const { email, otp } = req.params;
+  console.log({otp, email});
+  UserOtpVerification.findOne({ user_id: email })
+    .then(async (result) => {
+      const { user_id, otp: otpHashed } = result;
+      
+      const otpValidationResult = await comparePasswords(otp, otpHashed);
+      if (!otpValidationResult) {
+        return sendResponse(res, 404, "Not authorized!", ERROR);
+      }
+      await UserOtpVerification.deleteOne({ user_id, otp: otpHashed });
+      return sendResponse(res, 200, "Authorized to reset password!", SUCCESS);
+    })
+    .catch((error) =>
+    //TO DO log error rabbitmq
+      sendResponse(res, 404, "Could not authorize password reset!", ERROR)
+    );
+};
+
 export const checkResetPasswordLink = (req, res) => {
   const { email, otp } = req.params;
   UserOtpVerification.findOne({ user_id: email })
@@ -191,11 +211,9 @@ export const checkResetPasswordLink = (req, res) => {
           { email: user_id },
           { $set: { verified: true } }
         );
-        await UserOtpVerification.deleteOne({ user_id, otp: otpHashed });
-        //render
-        console.log("before render");
+        // await UserOtpVerification.deleteOne({ user_id, otp: otpHashed });
         return res.redirect(
-          `${process.env.RESET_PASSWORD_PAGE_HOST}?email=${email}`
+          `${process.env.RESET_PASSWORD_PAGE_HOST}/${email}/${otp}`
         );
       }
 
