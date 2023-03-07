@@ -17,16 +17,15 @@ export const generateJwt = (username) => {
 };
 
 export const validateTokenMiddleware = async (req, res, next) => {
-  const auhorizationHeader = req.headers.authorization;
+  //un proxy
+  const token = req.cookies.token;
   let result;
 
-  if (!auhorizationHeader) {
+  if (!token) {
     return res.status(401).json({
       message: "Access token is missing",
     });
   }
-
-  const token = req.headers.authorization.split(" ")[1];
 
   try {
     let user = await User.findOne({
@@ -46,7 +45,7 @@ export const validateTokenMiddleware = async (req, res, next) => {
         message: "Invalid token",
       });
     }
-    
+
     req.decodedJwt = result;
     next();
   } catch (error) {

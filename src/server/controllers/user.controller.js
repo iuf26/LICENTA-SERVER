@@ -89,6 +89,11 @@ export const login = async (req, res) => {
       return sendResponse(res, 500, "Login failed", ERROR);
     user.acces_token = token;
     await user.save();
+    res.cookie("token", token, {
+      path: "/",
+      expires: DateTime.now().plus({ days: 2 }).toJSDate(),
+      httpOnly: true,
+    });
     return sendResponse(res, 200, "Successful login!", SUCCESS, { token });
   }
   return sendResponse(res, 400, "Wrong credentials!", ERROR);
@@ -172,11 +177,10 @@ export const resetPassword = async (req, res) => {
 
 export const checkResetPasswordOtp = (req, res) => {
   const { email, otp } = req.params;
-  console.log({otp, email});
   UserOtpVerification.findOne({ user_id: email })
     .then(async (result) => {
       const { user_id, otp: otpHashed } = result;
-      
+
       const otpValidationResult = await comparePasswords(otp, otpHashed);
       if (!otpValidationResult) {
         return sendResponse(res, 404, "Not authorized!", ERROR);
@@ -185,7 +189,7 @@ export const checkResetPasswordOtp = (req, res) => {
       return sendResponse(res, 200, "Authorized to reset password!", SUCCESS);
     })
     .catch((error) =>
-    //TO DO log error rabbitmq
+      //TO DO log error rabbitmq
       sendResponse(res, 404, "Could not authorize password reset!", ERROR)
     );
 };
