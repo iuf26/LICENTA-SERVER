@@ -7,6 +7,7 @@ import { Server as IOServer } from "socket.io";
 import { userRoute } from "server/routes/user.route";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import { streamingRoute } from "server/routes/streaming.route";
 
 dotenv.config();
 const app = express();
@@ -30,6 +31,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //app.use(cors({ origin: "*", credentials: true }));
 app.use(cookieParser());
 app.use("/user", userRoute);
+app.use("/stream", streamingRoute)
 //MongoDB connection
 const database = process.env.MONGO_URL;
 mongoose.set("strictQuery", true);
