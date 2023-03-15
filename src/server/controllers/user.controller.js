@@ -92,7 +92,10 @@ export const login = async (req, res) => {
     res.cookie("token", token, {
       path: "/",
       expires: DateTime.now().plus({ days: 2 }).toJSDate(),
-      httpOnly: true,
+    });
+    res.cookie("authenticated", true, {
+      path: "/",
+      expires: DateTime.now().plus({ days: 2 }).toJSDate(),
     });
     return sendResponse(res, 200, "Successful login!", SUCCESS, { token });
   }
@@ -100,7 +103,7 @@ export const login = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-  const { username } = req.decodedJwt;
+  const { username, spotifyToken } = res.locals.decodedJwt;
   User.findOne({ email: username })
     .then(async (user) => {
       if (user) {

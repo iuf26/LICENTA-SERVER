@@ -5,9 +5,9 @@ const options = {
   expiresIn: "24h",
 };
 
-export const generateJwt = (username) => {
+export const generateJwt = (username,spotifyToken='') => {
   try {
-    const payload = { username };
+    const payload = { username,spotifyToken };
     const token = jwt.sign(payload, process.env.JWT_SECRET, options);
     return token;
   } catch (error) {
@@ -46,7 +46,7 @@ export const validateTokenMiddleware = async (req, res, next) => {
       });
     }
 
-    req.decodedJwt = result;
+    res.locals.decodedJwt = result;
     next();
   } catch (error) {
     console.log(error);
@@ -61,3 +61,5 @@ export const validateTokenMiddleware = async (req, res, next) => {
     });
   }
 };
+
+
