@@ -1,6 +1,5 @@
 import express from "express";
 import fs from "fs";
-import SpotifyWebApi from "spotify-web-api-node";
 import got from "got";
 import axios from "axios";
 import {
@@ -16,20 +15,8 @@ import {
   validateTokenMiddleware,
 } from "server/helpers/jwt.helper";
 import { sendResponse, SUCCESS } from "server/helpers/response.helper";
-
-const spotifyApi = new SpotifyWebApi({
-  clientId: process.env.SPOTIFY_CLIENT_ID,
-  clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-  redirectUri: process.env.SPOTIFY_REDIRECT_URI,
-});
-
-spotifyApi.getAccessToken();
-const scopes = [
-  "user-read-private",
-  "user-read-email",
-  "playlist-modify-public",
-  "playlist-modify-private",
-];
+import * as streamingController from "server/controllers/streaming.controller";
+import { spotifyApi, scopes } from "server/controllers/streaming.controller";
 
 const router = express.Router();
 router.get("/track", (req, res) => {
@@ -87,16 +74,16 @@ router.get("/spotify/login/:userId", (req, res) => {
 router.get("/spotify/callback", async (req, res) => {
   const { code } = req.query;
   const userId = req.cookies.userId;
-  console.log({ userId});
+  console.log({ userId });
   try {
     var data = await spotifyApi.authorizationCodeGrant(code);
     const { access_token, refresh_token } = data.body;
-    spotifyApi.setAccessToken(access_token);
-    spotifyApi.setRefreshToken(refresh_token);
+
     //save refresh acces token
     const token = generateJwt(userId, access_token);
     await User.findOneAndUpdate(
       { email: userId },
+      { spotify_acces_token: access_token },
       { spotify_refresh_token: refresh_token }
     );
     await User.findOneAndUpdate({ email: userId }, { acces_token: token });
@@ -124,6 +111,17 @@ router.get(
     spotifyApi.setAccessToken(spotifyToken);
     spotifyApi.setRefreshToken(spotifyRefreshAccesToken);
   }
+);
+
+// router.get(
+//   "/spotify/recommandations",
+//   [validateTokenMiddleware, extractSpotifyRefreshToken],
+//   streamingController.getMusicRecommandations
+// );
+router.post(
+  "/spotify/recommandations/:userId",
+  [validateTokenMiddleware, extractSpotifyRefreshToken],
+  streamingController.getMusicRecommandations
 );
 
 export { router as streamingRoute };

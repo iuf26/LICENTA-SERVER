@@ -1,5 +1,6 @@
 import User from "server/models/User";
 
+
 export const getSpotifyRefreshedAccesToken = (refreshToken, spotifyApi) => {
   spotifyApi.setRefreshToken(refreshToken);
   return spotifyApi.refreshAccessToken(); //resp.body.access_token
@@ -13,3 +14,4 @@ export const extractSpotifyRefreshToken = async (req, res, next) => {
   res.locals.spotifyRefreshAccesToken = spotifyRefreshAccesToken;
   next();
 };
+
