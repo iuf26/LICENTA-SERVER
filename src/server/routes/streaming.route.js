@@ -86,7 +86,11 @@ router.get("/spotify/callback", async (req, res) => {
       { spotify_acces_token: access_token },
       { spotify_refresh_token: refresh_token }
     );
-    await User.findOneAndUpdate({ email: userId }, { acces_token: token });
+    await User.findOneAndUpdate(
+      { email: userId },
+      { acces_token: token, spotify_verified: true }
+    );
+
     res.cookie("token", token, {
       path: "/",
       expires: DateTime.now().plus({ days: 2 }).toJSDate(),
@@ -113,11 +117,6 @@ router.get(
   }
 );
 
-// router.get(
-//   "/spotify/recommandations",
-//   [validateTokenMiddleware, extractSpotifyRefreshToken],
-//   streamingController.getMusicRecommandations
-// );
 router.post(
   "/spotify/recommandations/:userId",
   [validateTokenMiddleware, extractSpotifyRefreshToken],
