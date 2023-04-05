@@ -16,9 +16,11 @@ export const extractSpotifyRefreshToken = async (req, res, next) => {
 
 export const refreshSpotifyAccesTokenForUser = async (userId, spotifyApi) => {
   try {
+    console.log("refreshing spotify auth token...");
     const { spotify_refresh_token } = await User.findOne({ email: userId });
     spotifyApi.setRefreshToken(spotify_refresh_token);
     const responseRefreshToken = await spotifyApi.refreshAccessToken();
+    console.log({responseRefreshToken });
     const freshAccessToken = responseRefreshToken.body.access_token;
 
     await User.findOneAndUpdate(
@@ -29,6 +31,7 @@ export const refreshSpotifyAccesTokenForUser = async (userId, spotifyApi) => {
     );
     return true;
   } catch (error) {
+    console.info("error thrown in refreshSpotifyAccesTokenForUser");
     console.info(error);
     return false;
   }

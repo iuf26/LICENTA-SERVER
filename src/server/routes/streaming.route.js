@@ -123,4 +123,16 @@ router.post(
   streamingController.getMusicRecommandations
 );
 
+router.post(
+  "/spotify/playlist/:userId",
+  [validateTokenMiddleware, extractSpotifyRefreshToken],
+  streamingController.createSpotifyPlaylist
+);
+
+router.post(
+  "/spotify/playlist/tracks/:playlistId",
+  [validateTokenMiddleware, extractSpotifyRefreshToken],
+  streamingController.addPlaylistTracks
+);
+
 export { router as streamingRoute };
