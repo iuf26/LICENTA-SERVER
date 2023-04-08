@@ -135,4 +135,10 @@ router.post(
   streamingController.addPlaylistTracks
 );
 
+router.get(
+  "/spotify/artists-ids",
+  [validateTokenMiddleware, extractSpotifyRefreshToken],
+  streamingController.saveArtistsIds
+);
+
 export { router as streamingRoute };

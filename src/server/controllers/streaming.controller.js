@@ -1,3 +1,5 @@
+import { artistIds } from "server/helpers/artistIds";
+import { artists, saveArtistsIdsFromSpotifyApis } from "server/helpers/artists";
 import { ERROR, sendResponse, SUCCESS } from "server/helpers/response.helper";
 import {
   refreshAccesTokenForUser,
@@ -19,13 +21,47 @@ export const scopes = [
   "playlist-modify-private",
 ];
 
+const getArtistsNamesFromText = ({ text, words }) => {
+  //This function could be optimized
+
+  const artistsFound = [];
+  let result;
+  text = text.toLowerCase();
+  artists.forEach(function (artist) {
+    const regexp = new RegExp(
+      "\\b" + artist.toLowerCase().replace(/\./g, "\\.") + "\\b"
+    );
+
+    if (regexp.exec(text) !== null) {
+      artistsFound.push(artist);
+    }
+  });
+
+  console.log({ artistsFound });
+  artistsFound.forEach((artist) => {
+    if (result) {
+      result = `${result},${artistIds[artist]}`;
+    } else {
+      result = `${artistIds[artist]}`;
+    }
+  });
+
+  return { result, artistsFound };
+};
+
 export const getMusicRecommandations = async (req, res) => {
-  const { detectedEmotion, loudness, tempo } = req.body;
+  const { detectedEmotion, loudness, tempo, text, words } = req.body;
   const { userId } = req.params;
   const { spotify_refresh_token, spotify_acces_token } = await User.findOne({
     email: userId,
   });
-  const seed_artists = "5YGY8feqx7naU7z4HrwZM6,6n7nd5iceYpXVwcx8VPpxF";
+  //const seed_artists = "5YGY8feqx7naU7z4HrwZM6,6n7nd5iceYpXVwcx8VPpxF";
+  let result, artistsFound;
+  if (text) {
+    const res = getArtistsNamesFromText({ text, words });
+    result = res.result;
+    artistsFound = res.artistsFound;
+  }
   const seed_genres = detectedEmotion;
   const seed_tracks = "3AAY8YicetRPlDAkibHLiS";
   const max_loudness = loudness;
@@ -33,17 +69,27 @@ export const getMusicRecommandations = async (req, res) => {
   let recommendation;
   spotifyApi.setAccessToken(spotify_acces_token);
   spotifyApi.setRefreshToken(spotify_refresh_token);
-
+  console.log({ result });
   try {
-    recommendation = await spotifyApi.getRecommendations({
-      seed_artists,
-      seed_genres,
-      seed_tracks,
-      // max_loudness,
-      // max_tempo,
-    });
+    let body;
+    if (!result) {
+      body = {
+        seed_genres,
+      };
+    } else {
+      body = {
+        seed_genres,
+        seed_artists: result,
+        // max_loudness,
+        // max_tempo,
+      };
+    }
+
+    recommendation = await spotifyApi.getRecommendations(body);
+    artistsFound = artistsFound.join();
     return sendResponse(res, 200, "Music Recommandations retrieved", SUCCESS, {
       recommendation,
+      artistsFound,
     });
   } catch (error) {
     if (error.statusCode === 401) {
@@ -136,4 +182,9 @@ export const addPlaylistTracks = async (req, res) => {
     console.info(error);
     return sendResponse(res, 505, "Could not add track to playlist", ERROR);
   }
+};
+
+export const saveArtistsIds = async (req, res) => {
+  await saveArtistsIdsFromSpotifyApis(spotifyApi);
+  res.end();
 };
