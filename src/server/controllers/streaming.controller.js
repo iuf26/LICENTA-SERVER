@@ -104,13 +104,7 @@ export const getMusicRecommandations = async (req, res) => {
         const { spotify_acces_token } = await User.findOne({ email: userId });
         spotifyApi.setAccessToken(spotify_acces_token);
 
-        recommendation = await spotifyApi.getRecommendations({
-          seed_artists,
-          seed_genres,
-          seed_tracks,
-          max_loudness,
-          max_tempo,
-        });
+        recommendation = await spotifyApi.getRecommendations({ ...body });
 
         return sendResponse(
           res,
@@ -119,6 +113,7 @@ export const getMusicRecommandations = async (req, res) => {
           SUCCESS,
           {
             recommendation,
+            artistsFound
           }
         );
       } else {
