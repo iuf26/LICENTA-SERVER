@@ -2,6 +2,7 @@ import { artistIds } from "server/helpers/artistIds";
 import { artists, saveArtistsIdsFromSpotifyApis } from "server/helpers/artists";
 import { ERROR, sendResponse, SUCCESS } from "server/helpers/response.helper";
 import {
+  getTracksFromArtists,
   refreshAccesTokenForUser,
   refreshSpotifyAccesTokenForUser,
 } from "server/helpers/streaming.helper";
@@ -69,10 +70,12 @@ export const getMusicRecommandations = async (req, res) => {
   let recommendation;
   spotifyApi.setAccessToken(spotify_acces_token);
   spotifyApi.setRefreshToken(spotify_refresh_token);
-  console.log({ result });
+  console.log({ result});
+ 
+
   try {
     let body;
-    if (!result) {
+    if (!result || result === '') {
       body = {
         seed_genres,
       };
@@ -84,12 +87,19 @@ export const getMusicRecommandations = async (req, res) => {
         // max_tempo,
       };
     }
-
+    console.log({body});
+    console.log("recommend");
     recommendation = await spotifyApi.getRecommendations(body);
-    artistsFound = artistsFound.join();
+    console.log("finish recommend");
+
+    console.log("before get artists tracks");
+    const artistsTracks = await getTracksFromArtists(artistsFound, spotifyApi, 3);
+    console.log("after get artists tracks");
+    console.log({ artistsTracks });
     return sendResponse(res, 200, "Music Recommandations retrieved", SUCCESS, {
       recommendation,
-      artistsFound,
+      artistsFound: artistsFound.join(),
+      artistsTracks
     });
   } catch (error) {
     if (error.statusCode === 401) {
@@ -103,7 +113,7 @@ export const getMusicRecommandations = async (req, res) => {
         console.info("Access token for spotify api is refreshed");
         const { spotify_acces_token } = await User.findOne({ email: userId });
         spotifyApi.setAccessToken(spotify_acces_token);
-
+        const artistsTracks = await getTracksFromArtists(artistsFound, spotifyApi, 3);
         recommendation = await spotifyApi.getRecommendations({ ...body });
 
         return sendResponse(
@@ -113,7 +123,8 @@ export const getMusicRecommandations = async (req, res) => {
           SUCCESS,
           {
             recommendation,
-            artistsFound
+            artistsFound: artistsFound.join(),
+            artistsTracks
           }
         );
       } else {
