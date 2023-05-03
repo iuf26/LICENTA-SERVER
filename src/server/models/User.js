@@ -28,6 +28,18 @@ export const userSchema = new Schema({
     type: String,
     default: null,
   },
+  spotify_verified: {
+    type: Boolean,
+    default: false,
+  },
+  spotify_acces_token: {
+    type: String,
+    default: null,
+  },
+  spotify_refresh_token: {
+    type: String,
+    default: null,
+  },
 });
 
 const User = mongoose.model("users", userSchema);
