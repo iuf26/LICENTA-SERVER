@@ -60,6 +60,7 @@ export const getTracksFromArtists = async (
   tracksToGetForEachArtist
 ) => {
   let result = [];
+  if(!artists?.length) return result;
   for (let i = 0; i < artists.length; i++) {
     const tracks = await spotifyApi.searchTracks(artists[i], {
       limit: tracksToGetForEachArtist,

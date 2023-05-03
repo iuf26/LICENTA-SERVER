@@ -51,7 +51,9 @@ const getArtistsNamesFromText = ({ text, words }) => {
 };
 
 export const getMusicRecommandations = async (req, res) => {
-  const { detectedEmotion, loudness, tempo, text, words } = req.body;
+  let { detectedEmotion, loudness, tempo} = req.body;
+  let text = req.body.text? req.body.text : "";
+  let words = req.body.words? req.body.words : [];
   const { userId } = req.params;
   const { spotify_refresh_token, spotify_acces_token } = await User.findOne({
     email: userId,
@@ -70,36 +72,35 @@ export const getMusicRecommandations = async (req, res) => {
   let recommendation;
   spotifyApi.setAccessToken(spotify_acces_token);
   spotifyApi.setRefreshToken(spotify_refresh_token);
-  console.log({ result});
- 
+  console.log({ result });
+  let body;
+  if (!result || result === "") {
+    body = {
+      seed_genres,
+    };
+  } else {
+    body = {
+      seed_genres,
+      seed_artists: result,
+      // max_loudness,
+      // max_tempo,
+    };
+  }
 
   try {
-    let body;
-    if (!result || result === '') {
-      body = {
-        seed_genres,
-      };
-    } else {
-      body = {
-        seed_genres,
-        seed_artists: result,
-        // max_loudness,
-        // max_tempo,
-      };
-    }
-    console.log({body});
+    console.log({ body });
     console.log("recommend");
     recommendation = await spotifyApi.getRecommendations(body);
     console.log("finish recommend");
 
     console.log("before get artists tracks");
-    const artistsTracks = await getTracksFromArtists(artistsFound, spotifyApi, 3);
+    const artistsTracks = await getTracksFromArtists(artistsFound, spotifyApi);
     console.log("after get artists tracks");
     console.log({ artistsTracks });
     return sendResponse(res, 200, "Music Recommandations retrieved", SUCCESS, {
       recommendation,
       artistsFound: artistsFound.join(),
-      artistsTracks
+      artistsTracks,
     });
   } catch (error) {
     if (error.statusCode === 401) {
@@ -113,7 +114,10 @@ export const getMusicRecommandations = async (req, res) => {
         console.info("Access token for spotify api is refreshed");
         const { spotify_acces_token } = await User.findOne({ email: userId });
         spotifyApi.setAccessToken(spotify_acces_token);
-        const artistsTracks = await getTracksFromArtists(artistsFound, spotifyApi, 3);
+        const artistsTracks = await getTracksFromArtists(
+          artistsFound,
+          spotifyApi
+        );
         recommendation = await spotifyApi.getRecommendations({ ...body });
 
         return sendResponse(
@@ -124,7 +128,7 @@ export const getMusicRecommandations = async (req, res) => {
           {
             recommendation,
             artistsFound: artistsFound.join(),
-            artistsTracks
+            artistsTracks,
           }
         );
       } else {
