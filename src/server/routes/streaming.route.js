@@ -142,11 +142,17 @@ router.get(
   streamingController.saveArtistsIds
 );
 
-router.get("/spotify/artist-songs", async (req, res) => {
-  spotifyApi.setAccessToken("BQBTSVPYMiPYdhGHDsluqeI7MuGNMc3KYF8nHYrlcKLCUE0FkI87VRyQpvkZS-5Hrd3D2psxt8Acze2WezI78dP7_1f948saERIPuYETrlygH3NKmHU8BYlEpb-KLHSDrzyI8QlRfstqNIUFlQ6-mpV3dQGiPAjS9dNfOYbHeokVJdOlPXWDucc7OUgswDP8vUJplwFwDSbW-9_0ozSPxHmjc_jBHxTU3s8ihdBjCfSjmJd-i6Q_UmdPG9UvhD2PsdVPYK84eUkH0BXjnQ");
-  spotifyApi.setRefreshToken("AQD8a2gQMiGCsYd450jJG7SO7iskv7ZZU0wju47xYnVS7cIdeBLKyFyfVS2g5e_IbwIaJejitJ1_gf1wHV9UVGiZopHuS_ILKobzsR9GlltDkcbmOtPF2q0rgl1OmfJyvQ8");
-  const rez = await getTracksFromArtists(["Adele", "Selena Gomez"],spotifyApi,3);
-  res.send(rez);
-});
+router.get(
+  "/spotify/kids-recommandations/:userId",
+  [validateTokenMiddleware, extractSpotifyRefreshToken],
+  streamingController.getMusicRecommandationsKids
+)
+
+// router.get("/spotify/artist-songs", async (req, res) => {
+//   spotifyApi.setAccessToken("BQBTSVPYMiPYdhGHDsluqeI7MuGNMc3KYF8nHYrlcKLCUE0FkI87VRyQpvkZS-5Hrd3D2psxt8Acze2WezI78dP7_1f948saERIPuYETrlygH3NKmHU8BYlEpb-KLHSDrzyI8QlRfstqNIUFlQ6-mpV3dQGiPAjS9dNfOYbHeokVJdOlPXWDucc7OUgswDP8vUJplwFwDSbW-9_0ozSPxHmjc_jBHxTU3s8ihdBjCfSjmJd-i6Q_UmdPG9UvhD2PsdVPYK84eUkH0BXjnQ");
+//   spotifyApi.setRefreshToken("AQD8a2gQMiGCsYd450jJG7SO7iskv7ZZU0wju47xYnVS7cIdeBLKyFyfVS2g5e_IbwIaJejitJ1_gf1wHV9UVGiZopHuS_ILKobzsR9GlltDkcbmOtPF2q0rgl1OmfJyvQ8");
+//   const rez = await getTracksFromArtists(["Adele", "Selena Gomez"],spotifyApi,3);
+//   res.send(rez);
+// });
 
 export { router as streamingRoute };
