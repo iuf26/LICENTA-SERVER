@@ -142,7 +142,7 @@ router.get(
   streamingController.saveArtistsIds
 );
 
-router.get(
+router.post(
   "/spotify/kids-recommandations/:userId",
   [validateTokenMiddleware, extractSpotifyRefreshToken],
   streamingController.getMusicRecommandationsKids

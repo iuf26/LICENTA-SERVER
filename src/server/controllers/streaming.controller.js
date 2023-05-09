@@ -52,6 +52,8 @@ const getArtistsNamesFromText = ({ text, words }) => {
 };
 
 export const getMusicRecommandationsKids = async (req, res) => {
+  console.log("******here****");
+  let recommendation;
   const { detectedEmotion } = req.body;
   const { userId } = req.params;
   const { spotify_refresh_token, spotify_acces_token } = await User.findOne({
