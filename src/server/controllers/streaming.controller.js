@@ -3,6 +3,7 @@ import { artists, saveArtistsIdsFromSpotifyApis } from "server/helpers/artists";
 import { ERROR, sendResponse, SUCCESS } from "server/helpers/response.helper";
 import {
   getTracksFromArtists,
+  kidsGenre,
   refreshAccesTokenForUser,
   refreshSpotifyAccesTokenForUser,
 } from "server/helpers/streaming.helper";
@@ -50,29 +51,69 @@ const getArtistsNamesFromText = ({ text, words }) => {
   return { result, artistsFound };
 };
 
-export const getMusicRecommandations = async (req, res) => {
-  let { detectedEmotion, loudness, tempo} = req.body;
-  let text = req.body.text? req.body.text : "";
-  let words = req.body.words? req.body.words : [];
+export const getMusicRecommandationsKids = async (req, res) => {
+  console.log("******here****");
+  let recommendation;
+  const { detectedEmotion } = req.body;
   const { userId } = req.params;
   const { spotify_refresh_token, spotify_acces_token } = await User.findOne({
     email: userId,
   });
-  //const seed_artists = "5YGY8feqx7naU7z4HrwZM6,6n7nd5iceYpXVwcx8VPpxF";
+  const seed_genres = kidsGenre(detectedEmotion);
+  spotifyApi.setAccessToken(spotify_acces_token);
+  spotifyApi.setRefreshToken(spotify_refresh_token);
+  const body = {
+    seed_genres,
+  };
+
+  try {
+    recommendation = await spotifyApi.getRecommendations(body);
+    return sendResponse(res, 200, "Kids Music Recommandations retrieved", SUCCESS, {
+      recommendation,
+    });
+  } catch (error) {
+    //token expired
+    const response = await refreshSpotifyAccesTokenForUser(userId, spotifyApi);
+    if (response) {
+      console.info("Access token for spotify api is refreshed");
+      const { spotify_acces_token } = await User.findOne({ email: userId });
+      spotifyApi.setAccessToken(spotify_acces_token);
+      recommendation = await spotifyApi.getRecommendations({ ...body });
+      return sendResponse(
+        res,
+        200,
+        "Kids Music Recommandations retrieved",
+        SUCCESS,
+        {
+          recommendation,
+        }
+      );
+    } else {
+      console.info("Could not refresh access token for children music recommendations request");
+    }
+  }
+};
+
+export const getMusicRecommandations = async (req, res) => {
+  const { detectedEmotion } = req.body;
+  let text = req.body.text ? req.body.text : "";
+  let words = req.body.words ? req.body.words : [];
   let result, artistsFound;
+  let recommendation;
+  const { userId } = req.params;
+  const { spotify_refresh_token, spotify_acces_token } = await User.findOne({
+    email: userId,
+  });
+  const seed_genres = detectedEmotion;
+
   if (text) {
     const res = getArtistsNamesFromText({ text, words });
     result = res.result;
     artistsFound = res.artistsFound;
   }
-  const seed_genres = detectedEmotion;
-  const seed_tracks = "3AAY8YicetRPlDAkibHLiS";
-  const max_loudness = loudness;
-  const max_tempo = tempo;
-  let recommendation;
+
   spotifyApi.setAccessToken(spotify_acces_token);
   spotifyApi.setRefreshToken(spotify_refresh_token);
-  console.log({ result });
   let body;
   if (!result || result === "") {
     body = {
@@ -82,21 +123,12 @@ export const getMusicRecommandations = async (req, res) => {
     body = {
       seed_genres,
       seed_artists: result,
-      // max_loudness,
-      // max_tempo,
     };
   }
 
   try {
-    console.log({ body });
-    console.log("recommend");
     recommendation = await spotifyApi.getRecommendations(body);
-    console.log("finish recommend");
-
-    console.log("before get artists tracks");
     const artistsTracks = await getTracksFromArtists(artistsFound, spotifyApi);
-    console.log("after get artists tracks");
-    console.log({ artistsTracks });
     return sendResponse(res, 200, "Music Recommandations retrieved", SUCCESS, {
       recommendation,
       artistsFound: artistsFound.join(),
@@ -105,7 +137,6 @@ export const getMusicRecommandations = async (req, res) => {
   } catch (error) {
     if (error.statusCode === 401) {
       //token expired
-      console.log("before refresh..");
       const response = await refreshSpotifyAccesTokenForUser(
         userId,
         spotifyApi
@@ -119,7 +150,6 @@ export const getMusicRecommandations = async (req, res) => {
           spotifyApi
         );
         recommendation = await spotifyApi.getRecommendations({ ...body });
-
         return sendResponse(
           res,
           200,

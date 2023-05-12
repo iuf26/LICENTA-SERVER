@@ -142,7 +142,7 @@ export const verify = (req, res) => {
         );
         await UserOtpVerification.deleteOne({ user_id, otp: otpHashed });
         //return sendResponse(res, 200, "Successfully verified email!", SUCCESS);
-        return res.redirect("/verified");
+        return res.redirect("/user/verified");
       }
 
       await UserOtpVerification.deleteOne({ user_id, otp: otpHashed });

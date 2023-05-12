@@ -60,7 +60,7 @@ export const getTracksFromArtists = async (
   tracksToGetForEachArtist
 ) => {
   let result = [];
-  if(!artists?.length) return result;
+  if (!artists || !artists?.length) return result;
   for (let i = 0; i < artists.length; i++) {
     const tracks = await spotifyApi.searchTracks(artists[i], {
       limit: tracksToGetForEachArtist,
@@ -74,4 +74,15 @@ export const getTracksFromArtists = async (
   }
 
   return result;
+};
+
+export const kidsGenre = (emotion) => {
+  switch (emotion) {
+    case "happy":
+      return "children,happy,disney,dance";
+    case "sad":
+      return "sleep,children,disney,ambient";
+    default:
+      return null;
+  }
 };
